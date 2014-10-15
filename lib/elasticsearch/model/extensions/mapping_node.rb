@@ -1,4 +1,4 @@
-require 'shortest_path'
+require_relative 'shortest_path'
 
 module Elasticsearch
   module Model
