@@ -39,7 +39,7 @@ module Elasticsearch
         def build_hash
           child_class = @active_record_class
 
-          field_to_update = -> {
+          field_to_update = @field_to_update || begin
             path = child_class.path_from(@parent_class)
             parent_to_child_path = path.map(&:name)
 
@@ -47,7 +47,9 @@ module Elasticsearch
             # そのとき、
             # 親aから子cへのパスが[:b, :c]だったら、bだけをupdateすればよいので
             parent_to_child_path.first
-          }.call || @field_to_update
+          end
+
+          parent_to_child_path ||= [field_to_update]
 
           puts "#{child_class.name} updates #{@parent_class.name}'s #{field_to_update}"
 

@@ -2,6 +2,8 @@ module Elasticsearch
   module Model
     module Extensions
       class ShortestPath
+        MAX_DEPTH = 5
+
         class Node
           include Enumerable
 
@@ -59,7 +61,10 @@ module Elasticsearch
 
         module ClassMethods
           def breadth_first_search(node, &block)
-            paths = node.each.map { |e| [e] }
+            original_paths = node.each.map { |e| [e] }
+            paths = original_paths
+
+            depth = 0
 
             loop {
               a = paths.select { |p|
@@ -69,12 +74,15 @@ module Elasticsearch
               }
 
               return a if a.size != 0
+              raise RuntimeError, 'Maximum depth exceeded while calculating the shortest path' if depth >= Elasticsearch::Model::Extensions::ShortestPath::MAX_DEPTH
 
               paths = paths.flat_map { |p|
                 p.last.destination.each.map { |e|
                   p + [e]
                 }
               }
+
+              depth += 1
             }
           end
 

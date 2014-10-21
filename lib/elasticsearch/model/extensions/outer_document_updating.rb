@@ -117,12 +117,14 @@ module Elasticsearch
             delayed = options[:delayed] || nil
             only_if = options[:if] || (-> r { true })
             records_to_update_documents = options[:records_to_update_documents] || nil
+            field_to_update = options[:field_to_update] || nil
 
             initialize_active_record!(
               self,
               :parent_class => parent_class,
               :delayed => delayed,
               :only_if => only_if,
+              :field_to_update => field_to_update,
               :records_to_update_documents => records_to_update_documents
             )
           end
