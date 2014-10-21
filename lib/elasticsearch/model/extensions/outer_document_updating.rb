@@ -104,20 +104,26 @@ module Elasticsearch
               first
           end
 
-          def initialize_active_record!(active_record_class, parent_class: parent_class, delayed:, if: -> r { true }, records_to_update_documents: nil)
-            config = Elasticsearch::Model::Extensions::Configuration.new(active_record_class, parent_class: parent_class, delayed: delayed, if: binding.local_variable_get(:if), records_to_update_documents: records_to_update_documents)
+          def initialize_active_record!(active_record_class, parent_class: parent_class, delayed:, only_if: -> r { true }, records_to_update_documents: nil, field_to_update: nil)
+            config = Elasticsearch::Model::Extensions::Configuration.new(active_record_class, parent_class: parent_class, delayed: delayed, only_if: binding.local_variable_get(:only_if), records_to_update_documents: records_to_update_documents,
+            field_to_update: field_to_update)
 
             active_record_class.after_commit Elasticsearch::Model::Extensions::UpdateCallback.new(config)
             active_record_class.after_commit Elasticsearch::Model::Extensions::DestroyCallback.new(config), on: :destroy
           end
 
-          def partially_updates_document_of(parent_class, delayed:, if: -> r { true }, records_to_update_documents: nil)
+          def partially_updates_document_of(parent_class, options)
+            options ||= {}
+            delayed = options[:delayed] || nil
+            only_if = options[:if] || (-> r { true })
+            records_to_update_documents = options[:records_to_update_documents] || nil
+
             initialize_active_record!(
               self,
-              parent_class: parent_class,
-              delayed: delayed,
-              if: binding.local_variable_get(:if),
-              records_to_update_documents: records_to_update_documents
+              :parent_class => parent_class,
+              :delayed => delayed,
+              :only_if => only_if,
+              :records_to_update_documents => records_to_update_documents
             )
           end
 

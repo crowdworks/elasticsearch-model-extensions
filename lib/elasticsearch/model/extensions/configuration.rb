@@ -4,13 +4,14 @@ module Elasticsearch
       class Configuration
         attr_reader :delayed
 
-        def initialize(active_record_class, parent_class: parent_class, delayed:, if: -> r { true }, records_to_update_documents: nil)
+        def initialize(active_record_class, parent_class: parent_class, delayed:, only_if: -> r { true }, records_to_update_documents: nil, field_to_update: nil)
           @delayed = @delayed
 
           @active_record_class = active_record_class
           @parent_class = parent_class
-          @if = binding.local_variable_get(:if)
+          @if = binding.local_variable_get(:only_if)
           @records_to_update_documents = records_to_update_documents
+          @field_to_update = field_to_update
         end
 
         def to_hash
@@ -38,13 +39,15 @@ module Elasticsearch
         def build_hash
           child_class = @active_record_class
 
-          path = child_class.path_from(@parent_class)
-          parent_to_child_path = path.map(&:name)
+          field_to_update = -> {
+            path = child_class.path_from(@parent_class)
+            parent_to_child_path = path.map(&:name)
 
-          # a has_a b has_a cという関係のとき、cが更新されたらaのフィールドbをupdateする必要がある。
-          # そのとき、
-          # 親aから子cへのパスが[:b, :c]だったら、bだけをupdateすればよいので
-          field_to_update = parent_to_child_path.first
+            # a has_a b has_a cという関係のとき、cが更新されたらaのフィールドbをupdateする必要がある。
+            # そのとき、
+            # 親aから子cへのパスが[:b, :c]だったら、bだけをupdateすればよいので
+            parent_to_child_path.first
+          }.call || @field_to_update
 
           puts "#{child_class.name} updates #{@parent_class.name}'s #{field_to_update}"
 
