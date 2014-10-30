@@ -16,7 +16,9 @@ module Elasticsearch
           method_attributes = indexed_attributes - persisted_attributes - nested_attributes
           only_attributes = indexed_attributes - nested_attributes
 
-          options = {}
+          options = {
+            root: false
+          }
 
           if only_attributes.size > 1
             options[:only] = only_attributes
