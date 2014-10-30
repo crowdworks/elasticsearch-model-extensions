@@ -1,45 +1,55 @@
 require 'elasticsearch/model/extensions/all'
 
-RSpec.describe 'example' do
-  before :each do
-    ActiveRecord::Schema.define(:version => 1) do
-      create_table :articles do |t|
-        t.string :title
-        t.datetime :created_at, :default => 'NOW()'
+RSpec.describe 'integration' do
+  context 'with articles' do
+    before :each do
+      load 'setup/articles.rb'
+    end
+
+    after :each do
+      ActiveRecord::Schema.define(:version => 2) do
+        drop_table :articles
       end
     end
 
-    class ::Article < ActiveRecord::Base
-      include Elasticsearch::Model
-      include Elasticsearch::Model::Callbacks
+    describe 'a record creation' do
+      before(:each) do
+        ::Article.create(title: 'foo', created_at: Time.now)
 
-      settings index: {number_of_shards: 1, number_of_replicas: 0} do
-        mapping do
-          indexes :title, type: 'string', analyzer: 'snowball'
-          indexes :created_at, type: 'date'
-        end
+        ::Article.__elasticsearch__.refresh_index!
+      end
+
+      it 'makes the document searchable' do
+        expect(Article.search('foo').records.size).to eq(1)
       end
     end
 
-    Article.delete_all
-    Article.__elasticsearch__.create_index! force: true
+    describe 'a record update' do
+      before(:each) do
+        Article.first.update_attributes title: 'Test2'
 
-    ::Article.create! title: 'Test'
-    ::Article.create! title: 'Testing Coding'
-    ::Article.create! title: 'Coding'
+        Article.__elasticsearch__.refresh_index!
+      end
 
-    Article.__elasticsearch__.refresh_index!
-  end
+      it 'makes the document unsearchable using the old content' do
+        expect(Article.search('Test').records.size).to eq(0)
+      end
 
-  after :each do
-    ActiveRecord::Schema.define(:version => 2) do
-      drop_table :articles
+      it 'makes the document searchable using the new content' do
+        expect(Article.search('Test2').records.size).to eq(1)
+      end
+    end
+
+    describe 'a record deletion' do
+      before(:each) do
+        Article.first.destroy
+
+        Article.__elasticsearch__.refresh_index!
+      end
+
+      it 'makes the document unsearchable' do
+        expect(Article.search('Test').records.size).to eq(0)
+      end
     end
   end
-
-  subject {
-    ::Article.create(title: 'foo', created_at: Time.now)
-  }
-
-  it { is_expected.not_to be_nil }
 end
