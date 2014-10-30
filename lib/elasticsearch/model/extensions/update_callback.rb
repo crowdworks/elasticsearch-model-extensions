@@ -9,6 +9,7 @@ module Elasticsearch
           records_to_update_documents = config.records_to_update_documents
           optionally_delayed = config.optionally_delayed
           only_if = config.only_if
+          block = config.block
 
           record.instance_eval do
             return unless only_if.call(self) && index_update_required?
@@ -30,7 +31,7 @@ module Elasticsearch
               # Here, `article_comment.article` may contain outdated `comments` because `article_comment.article`
               # won't be notified with changes in `article_comments` thus won't reload `comments` automatically.
               target.map(&:reload).map(&optionally_delayed).each do |t|
-                t.partially_update_document(field_to_update)
+                block.call(t, [*field_to_update])
               end
             else
               optionally_delayed.call(target.reload).partially_update_document(field_to_update)

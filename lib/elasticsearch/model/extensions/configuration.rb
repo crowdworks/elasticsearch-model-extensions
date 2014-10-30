@@ -4,7 +4,7 @@ module Elasticsearch
       class Configuration
         attr_reader :delayed
 
-        def initialize(active_record_class, parent_class: parent_class, delayed:, only_if: -> r { true }, records_to_update_documents: nil, field_to_update: nil)
+        def initialize(active_record_class, parent_class: parent_class, delayed:, only_if: -> r { true }, records_to_update_documents: nil, field_to_update: nil, block: nil)
           @delayed = @delayed
 
           @active_record_class = active_record_class
@@ -12,6 +12,7 @@ module Elasticsearch
           @if = binding.local_variable_get(:only_if)
           @records_to_update_documents = records_to_update_documents
           @field_to_update = field_to_update
+          @block = block
         end
 
         def to_hash
@@ -32,6 +33,10 @@ module Elasticsearch
 
         def optionally_delayed
           -> t { delayed ? t.delay : t }
+        end
+
+        def block
+          to_hash[:block]
         end
 
         private
@@ -65,10 +70,18 @@ module Elasticsearch
 
           only_if, records_to_update_documents = update_strategy.apply
 
+          # The default block used to trigger partial updating on the parent document.
+          # Replace this by specifying `block` parameter to a configuration like `Configuration.new(block: BLOCK)`
+          # when more fine-grained controls over it like feature-toggling, graceful-degradation are required.
+          default_partial_updating_block = -> t, field_to_update {
+            t.partially_update_document(field_to_update)
+          }
+
           {
             field_to_update: field_to_update,
             records_to_update_documents: @records_to_update_documents || records_to_update_documents,
-            only_if: -> r { custom_if.call(r) && only_if.call(r) }
+            only_if: -> r { custom_if.call(r) && only_if.call(r) },
+            block: @block || default_partial_updating_block
           }
         end
       end

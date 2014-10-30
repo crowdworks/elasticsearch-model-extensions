@@ -57,7 +57,9 @@ class ::Comment < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::PartialUpdating
   include Elasticsearch::Model::Extensions::OuterDocumentUpdating
 
-  partially_updates_document_of ::Article, records_to_update_documents: -> comment { Article.find(comment.article_id) }
+  partially_updates_document_of ::Article, records_to_update_documents: -> comment { Article.find(comment.article_id) } do |t, changed_fields|
+    t.partially_update_document(*changed_fields)
+  end
 end
 
 Article.delete_all
