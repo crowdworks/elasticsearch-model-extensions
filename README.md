@@ -22,6 +22,14 @@ Or install it yourself as:
 
 TODO: Write usage instructions here
 
+## Running examples
+
+With Elasticsearch installed, you can run examples configured with an ES instance started on the port 9250 and AR connected to sqlite:
+
+    $ bundle exec irb -I spec -r example/articles_with_comments
+    (A bunch of log output here)
+    irb(main):001:0> Article.search('Comment1')
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/elasticsearch-model-extensions/fork )
