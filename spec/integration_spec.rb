@@ -1,7 +1,7 @@
 require 'elasticsearch/model/extensions/all'
 
 RSpec.describe 'example' do
-  before :all do
+  before :each do
     ActiveRecord::Schema.define(:version => 1) do
       create_table :articles do |t|
         t.string :title
@@ -12,13 +12,6 @@ RSpec.describe 'example' do
     class ::Article < ActiveRecord::Base
       include Elasticsearch::Model
       include Elasticsearch::Model::Callbacks
-      include Elasticsearch::Model::Extensions::IndexOperations
-      include Elasticsearch::Model::Extensions::BatchUpdating
-      include Elasticsearch::Model::Extensions::PartialUpdating
-
-      DEPENDENT_CUSTOM_ATTRIBUTES = {}
-
-      include Elasticsearch::Model::Extensions::DependencyTracking
 
       settings index: {number_of_shards: 1, number_of_replicas: 0} do
         mapping do
@@ -36,6 +29,12 @@ RSpec.describe 'example' do
     ::Article.create! title: 'Coding'
 
     Article.__elasticsearch__.refresh_index!
+  end
+
+  after :each do
+    ActiveRecord::Schema.define(:version => 2) do
+      drop_table :articles
+    end
   end
 
   subject {

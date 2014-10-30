@@ -8,4 +8,9 @@ group :test do
   gem 'activerecord', '~> 3.2'
   gem 'sqlite3'
   gem 'elasticsearch-model'
+  gem 'database_cleaner'
+end
+
+group :development do
+  gem 'elasticsearch-extensions'
 end

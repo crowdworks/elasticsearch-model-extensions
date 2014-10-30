@@ -13,23 +13,28 @@ RSpec.configure do |config|
 
   Kernel.srand config.seed
 
-  config.before(:all) do
-    require 'active_record'
-    require 'logger'
-    require 'elasticsearch/model'
+  config.before :all do
+    load 'setup/elasticsearch/start.rb'
+    load 'setup/elasticsearch/model.rb'
+  end
 
-    ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ":memory:")
-    logger = ::Logger.new(STDERR)
-    logger.formatter = lambda { |s, d, p, m| "\e[2;36m#{m}\e[0m\n" }
-    ActiveRecord::Base.logger = logger unless ENV['QUIET']
+  config.after :all do
+    load 'setup/elasticsearch/stop.rb'
+  end
 
-    ActiveRecord::LogSubscriber.colorize_logging = false
-    ActiveRecord::Migration.verbose = false
+  config.before :suite do
+    require 'setup/sqlite.rb'
 
-    tracer = ::Logger.new(STDERR)
-    tracer.formatter = lambda { |s, d, p, m| "#{m.gsub(/^.*$/) { |n| '   ' + n }}\n" }
+    require 'database_cleaner'
 
-    Elasticsearch::Model.client = Elasticsearch::Client.new host: "localhost:#{(ENV['TEST_CLUSTER_PORT'] || 9250)}",
-                                                            tracer: (ENV['QUIET'] ? nil : tracer)
+    # https://github.com/DatabaseCleaner/database_cleaner#additional-activerecord-options-for-truncation
+    DatabaseCleaner.clean_with :deletion, cache_tables: false
+    DatabaseCleaner.strategy = :deletion
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
   end
 end
