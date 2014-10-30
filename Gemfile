@@ -5,12 +5,12 @@ gemspec
 
 group :test do
   gem 'rspec', '~> 3.1.0'
-  gem 'activerecord', '~> 3.2'
-  gem 'sqlite3'
-  gem 'elasticsearch-model'
   gem 'database_cleaner'
 end
 
-group :development do
+group :test, :development do
+  gem 'activerecord', '~> 3.2'
+  gem 'sqlite3'
+  gem 'elasticsearch-model'
   gem 'elasticsearch-extensions'
 end
