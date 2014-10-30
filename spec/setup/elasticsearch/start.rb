@@ -1,5 +1,5 @@
 require 'elasticsearch/extensions/test/cluster'
 
-Elasticsearch::Extensions::Test::Cluster.start(nodes:1)
+port_to_listen = ENV['TEST_CLUSTER_PORT'] || '9250'
 
-ENV['TEST_CLUSTER_PORT'] = '9250'
+Elasticsearch::Extensions::Test::Cluster.start(nodes:1, port: port_to_listen.to_i)

@@ -26,4 +26,4 @@ matrix:
   fast_finish: true
 sudo: false
 before_install: gem install bundler
-script: bundle exec rspec
+script: TEST_CLUSTER_PORT=19250 bundle exec rspec
