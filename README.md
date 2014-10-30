@@ -1,5 +1,9 @@
 # Elasticsearch::Model::Extensions
 
+[![Build Status](https://travis-ci.org/crowdworks/elasticsearch-model-extensions.svg?branch=master)](https://travis-ci.org/crowdworks/elasticsearch-model-extensions)
+[![Coverage Status](https://coveralls.io/repos/crowdworks/elasticsearch-model-extensions/badge.png)](https://coveralls.io/r/crowdworks/elasticsearch-model-extensions)
+[![Code Climate](https://codeclimate.com/github/crowdworks/elasticsearch-model-extensions/badges/gpa.svg)](https://codeclimate.com/github/crowdworks/elasticsearch-model-extensions)
+
 TODO: Write a gem description
 
 ## Installation
