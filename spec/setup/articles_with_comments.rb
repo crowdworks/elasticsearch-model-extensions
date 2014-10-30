@@ -36,7 +36,12 @@ class ::Article < ActiveRecord::Base
       indexes :comments, type: 'object' do
         indexes :body, type: 'string', include_in_all: true
       end
+      indexes :num_comments, type: 'long'
     end
+  end
+
+  def num_comments
+    comments.count
   end
 
   # Required by Comment's `OuterDocumentUpdating`
