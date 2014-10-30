@@ -14,4 +14,5 @@ group :test, :development do
   gem 'sqlite3'
   gem 'elasticsearch-model'
   gem 'elasticsearch-extensions'
+  gem 'delayed_job_active_record', '~> 4.0.1'
 end

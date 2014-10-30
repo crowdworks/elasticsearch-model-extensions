@@ -1,17 +1,6 @@
 require 'elasticsearch/model/extensions/all'
 
-RSpec.describe Elasticsearch::Model::Extensions::OuterDocumentUpdating do
-  before(:each) do
-    load 'setup/articles_with_comments.rb'
-  end
-
-  after :each do
-    ActiveRecord::Schema.define(:version => 2) do
-      drop_table :comments
-      drop_table :articles
-    end
-  end
-
+RSpec.shared_examples 'a document updates outer documents on changed' do
   describe 'an article' do
     def article
       ::Article.search('Comment1').records.first
@@ -45,5 +34,38 @@ RSpec.describe Elasticsearch::Model::Extensions::OuterDocumentUpdating do
         expect(Comment.search('Comment1').records).to be_empty
       end
     end
+  end
+end
+
+RSpec.describe Elasticsearch::Model::Extensions::OuterDocumentUpdating do
+  context 'having articles with comments' do
+    before(:each) do
+      load 'setup/articles_with_comments.rb'
+    end
+
+    after :each do
+      ActiveRecord::Schema.define(:version => 2) do
+        drop_table :comments
+        drop_table :articles
+      end
+    end
+
+    it_behaves_like 'a document updates outer documents on changed'
+  end
+
+  context 'having articles with comments and delayed jobs' do
+    before(:each) do
+      load 'setup/articles_with_comments_and_delayed_jobs.rb'
+    end
+
+    after :each do
+      ActiveRecord::Schema.define(:version => 2) do
+        drop_table :comments
+        drop_table :articles
+        drop_table :delayed_jobs
+      end
+    end
+
+    it_behaves_like 'a document updates outer documents on changed'
   end
 end
