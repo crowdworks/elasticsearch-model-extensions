@@ -19,6 +19,22 @@ RSpec.shared_examples 'a document updates outer documents on changed' do
       }
     end
 
+    context 'with a comment updated' do
+      before(:each) do
+        article.comments.first.update_attributes body: 'Comment3'
+
+        Article.__elasticsearch__.refresh_index!
+      end
+
+      specify {
+        expect(Article.search('Comment1').records.first).to be_nil
+      }
+
+      specify {
+        expect(Article.search('Comment3').records.first).not_to be_nil
+      }
+    end
+
     context 'when a comment destroyed' do
       before(:each) do
         article.comments.first.destroy
