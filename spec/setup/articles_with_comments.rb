@@ -1,3 +1,5 @@
+load 'setup/undefine.rb'
+
 require 'elasticsearch/model/extensions/all'
 
 ActiveRecord::Schema.define(:version => 1) do
