@@ -1,15 +1,20 @@
-bundler_args: --without development
+bundler_args: "--without development"
 language: ruby
 rvm:
-  - 2.1.2
-  - 2.1.3
-  - ruby-head
+- 2.1.2
+- 2.1.3
+- ruby-head
 matrix:
   allow_failures:
-    - rvm: ruby-head
+  - rvm: ruby-head
   fast_finish: true
 before_script:
-  - ls -la /usr/share/elasticsearch/bin/elasticsearch
-  - echo $PWD
+- ls -la /usr/share/elasticsearch/bin/elasticsearch
+- echo $PWD
 before_install: gem install bundler
-script: SERVER=launch TEST_CLUSTER_COMMAND=/usr/share/elasticsearch/bin/elasticsearch TEST_CLUSTER_PARAMS='-Des.default.path.conf=/etc/elasticsearch/ -Des.default.path.logs=/var/log/elasticsearch/' TEST_CLUSTER_PORT=19250 bundle exec rspec
+script: SERVER=launch TEST_CLUSTER_COMMAND=/usr/share/elasticsearch/bin/elasticsearch
+  TEST_CLUSTER_PARAMS='-Des.default.path.conf=/etc/elasticsearch/ -Des.default.path.logs=/var/log/elasticsearch/'
+  TEST_CLUSTER_PORT=19250 bundle exec rspec
+notifications:
+  slack:
+    secure: CjEsKopTHFKWCyouA988YJrtrqsPsCg4fFNrhuVNoOl8DRYC4D0FS/NwVKNEnchDjl9pz5YFkc5QCLaMGtG6ZgQVc9zdg0cDizbRIF9WI5ryOWamthvfdx54/EIJXtQxUTeono4SwieAkjXRGrWpNzdGxY4xs6Hdfwup/YYPdiI=
