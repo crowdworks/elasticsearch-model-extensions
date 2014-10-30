@@ -25,5 +25,8 @@ matrix:
     - rvm: ruby-head
   fast_finish: true
 sudo: false
+before_script:
+  - ls -la /usr/share/elasticsearch/bin/elasticsearch
+  - echo $PWD
 before_install: gem install bundler
-script: TEST_CLUSTER_PORT=19250 bundle exec rspec
+script: SERVER=launch TEST_CLUSTER_COMMAND=/usr/share/elasticsearch/bin/elasticsearch TEST_CLUSTER_PARAMS='-Des.default.path.conf=/etc/elasticsearch/ -Des.default.path.logs=/var/log/elasticsearch/' TEST_CLUSTER_PORT=19250 bundle exec rspec
