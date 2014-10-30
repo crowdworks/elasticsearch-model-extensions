@@ -25,6 +25,7 @@ class ::Article < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::PartialUpdating
 
   DEPENDENT_CUSTOM_ATTRIBUTES = {
+    %w| comments | => %w| num_comments |
   }
 
   include Elasticsearch::Model::Extensions::DependencyTracking

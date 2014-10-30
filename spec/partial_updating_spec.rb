@@ -16,7 +16,15 @@ RSpec.describe Elasticsearch::Model::Extensions::PartialUpdating do
     described_class.build_as_json_options(klass: Article, props: Article.mappings.to_hash[Article.document_type.intern][:properties])
   }
 
+  subject {
+    Article.last
+  }
+
   specify {
     expect(as_json_options).to include(methods: :num_comments)
+  }
+
+  specify {
+    expect(subject.build_partial_document_for_update(:comments)).to include(:comments, :num_comments)
   }
 end
