@@ -92,7 +92,11 @@ module Elasticsearch
               one_or_more_errors_occurred = response["errors"]
 
               if one_or_more_errors_occurred
-                Rails.logger.warn "One or more error(s) occurred while updating the index #{records} for the type #{type}\n#{JSON.pretty_generate(response)}"
+                if defined? ::Rails
+                  ::Rails.logger.warn "One or more error(s) occurred while updating the index #{records} for the type #{type}\n#{JSON.pretty_generate(response)}"
+                else
+                  warn "One or more error(s) occurred while updating the index #{records} for the type #{type}\n#{JSON.pretty_generate(response)}"
+                end
               end
             else
               records.each do |r|

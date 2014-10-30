@@ -75,7 +75,11 @@ module Elasticsearch
             begin
               partial_document = build_partial_document_for_update(*changed_attributes)
             rescue => e
-              Rails.logger.error "Error in #partially_update_document: #{e.message}\n#{e.backtrace.join("\n")}"
+              if defined? ::Rails
+                ::Rails.logger.error "Error in #partially_update_document: #{e.message}\n#{e.backtrace.join("\n")}"
+              else
+                warn "Error in #partially_update_document: #{e.message}\n#{e.backtrace.join("\n")}"
+              end
             end
 
             update_document(partial_document)
