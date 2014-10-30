@@ -6,6 +6,7 @@ gemspec
 group :test do
   gem 'rspec', '~> 3.1.0'
   gem 'database_cleaner'
+  gem 'coveralls', require: false
 end
 
 group :test, :development do
