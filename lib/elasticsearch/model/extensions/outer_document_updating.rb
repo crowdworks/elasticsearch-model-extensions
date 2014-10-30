@@ -39,7 +39,14 @@ module Elasticsearch
               records_to_update_documents = begin
                 child_to_parent_path = Elasticsearch::Model::Extensions::OuterDocumentUpdating::ClassMethods::AssociationTraversal.shortest_path(from: child_class, to: parent_class)
 
-                -> updated_record { child_to_parent_path.inject(updated_record) { |d, parent_association| d.send parent_association } }
+                -> updated_record {
+                  if child_to_parent_path.nil?
+                    warn "Couldn't automatically determine the path from the class `#{child_class}` to `#{parent_class}." +
+                            "Use `partially_updates_document_of parent_class, records_to_update_documents: -> child { ... }` to specify it."
+                  end
+
+                  child_to_parent_path.inject(updated_record) { |d, parent_association| d.send parent_association }
+                }
               end
 
               [only_if, records_to_update_documents]
