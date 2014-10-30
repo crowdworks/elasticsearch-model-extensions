@@ -24,7 +24,6 @@ matrix:
   allow_failures:
     - rvm: ruby-head
   fast_finish: true
-sudo: false
 before_script:
   - ls -la /usr/share/elasticsearch/bin/elasticsearch
   - echo $PWD
