@@ -1,5 +1,7 @@
 load 'setup/undefine.rb'
 
+require 'delayed_job_active_record'
+
 require 'elasticsearch/model/extensions/all'
 require 'elasticsearch/model/extensions/delayed_job'
 
