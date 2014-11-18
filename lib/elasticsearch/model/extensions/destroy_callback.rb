@@ -5,23 +5,21 @@ module Elasticsearch
     module Extensions
       class DestroyCallback < Callback
         def after_commit(record)
-          field_to_update = config.field_to_update
-          records_to_update_documents = config.records_to_update_documents
-          optionally_delayed = config.optionally_delayed
-          only_if = config.only_if
-          block = config.block
+          with_error_logging do
+            records_to_update_documents = config.records_to_update_documents
+            only_if = config.only_if
+            callback = self
 
-          record.instance_eval do
-            return unless only_if.call(self)
+            record.instance_eval do
+              return unless only_if.call(self)
 
-            target = records_to_update_documents.call(self)
+              target = records_to_update_documents.call(self)
 
-            if target.respond_to? :each
-              target.map(&:reload).map(&optionally_delayed).each do |t|
-                block.call(t, [*field_to_update])
+              if target.respond_to? :each
+                callback.update_for_records(*target)
+              else
+                callback.update_for_records(target)
               end
-            else
-              optionally_delayed.call(target.reload).partially_update_document(field_to_update)
             end
           end
         end

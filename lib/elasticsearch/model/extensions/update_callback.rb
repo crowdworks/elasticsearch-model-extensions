@@ -5,36 +5,34 @@ module Elasticsearch
     module Extensions
       class UpdateCallback < Callback
         def after_commit(record)
-          field_to_update = config.field_to_update
-          records_to_update_documents = config.records_to_update_documents
-          optionally_delayed = config.optionally_delayed
-          only_if = config.only_if
-          block = config.block
+          with_error_logging do
+            records_to_update_documents = config.records_to_update_documents
+            only_if = config.only_if
+            callback = self
 
-          record.instance_eval do
-            return unless only_if.call(self) && index_update_required?
+            record.instance_eval do
+              return unless only_if.call(self) && index_update_required?
 
-            target = records_to_update_documents.call(self)
+              target = records_to_update_documents.call(self)
 
-            if target.respond_to? :each
-              # `reload` required to ensure that the outer record is up-to-date with changes
-              # when `self` is an instance of a `through` model.
-              #
-              # Imagine the case where we have an association containing:
-              #
-              #   `article has_many comments through article_comments`
-              #
-              # and:
-              #
-              #   `article_comments belongs_to article`
-              #
-              # Here, `article_comment.article` may contain outdated `comments` because `article_comment.article`
-              # won't be notified with changes in `article_comments` thus won't reload `comments` automatically.
-              target.map(&:reload).map(&optionally_delayed).each do |t|
-                block.call(t, [*field_to_update])
+              if target.respond_to? :each
+                # `reload` required to ensure that the outer record is up-to-date with changes
+                # when `self` is an instance of a `through` model.
+                #
+                # Imagine the case where we have an association containing:
+                #
+                #   `article has_many comments through article_comments`
+                #
+                # and:
+                #
+                #   `article_comments belongs_to article`
+                #
+                # Here, `article_comment.article` may contain outdated `comments` because `article_comment.article`
+                # won't be notified with changes in `article_comments` thus won't reload `comments` automatically.
+                callback.update_for_records(*target)
+              else
+                callback.update_for_records(target)
               end
-            else
-              optionally_delayed.call(target.reload).partially_update_document(field_to_update)
             end
           end
         end
