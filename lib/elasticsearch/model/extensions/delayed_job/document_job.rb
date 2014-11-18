@@ -5,6 +5,8 @@ module Elasticsearch
     module Extensions
       module DelayedJob
 
+        require 'delayed_job'
+
         class DocumentJob
           def initialize(params)
             record = params[:record]
