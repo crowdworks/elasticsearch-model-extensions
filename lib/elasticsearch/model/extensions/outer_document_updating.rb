@@ -1,4 +1,3 @@
-require_relative 'mapping_node'
 require_relative 'update_callback'
 require_relative 'destroy_callback'
 
@@ -91,13 +90,6 @@ module Elasticsearch
         end
 
         module ClassMethods
-          def path_from(from)
-            Elasticsearch::Model::Extensions::MappingNode.
-              from_class(from).
-              breadth_first_search { |e| e.destination.relates_to_class?(self) }.
-              first
-          end
-
           def initialize_active_record!(active_record_class, parent_class: parent_class, delayed:, only_if: -> r { true }, records_to_update_documents: nil, field_to_update: nil, block: block)
             config = Elasticsearch::Model::Extensions::Configuration.new(active_record_class, parent_class: parent_class, delayed: delayed, only_if: binding.local_variable_get(:only_if), records_to_update_documents: records_to_update_documents,
               field_to_update: field_to_update,

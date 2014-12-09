@@ -1,3 +1,5 @@
+require_relative 'association_path_finding/association_path_finder'
+
 module Elasticsearch
   module Model
     module Extensions
@@ -63,11 +65,16 @@ module Elasticsearch
 
         private
 
+        # @return [Elasticsearch::Model::Extensions::AssociationPathFinding::AssociationPathFinder]
+        def association_path_finder
+          @association_path_finder ||= Elasticsearch::Model::Extensions::AssociationPathFinding::AssociationPathFinder.new
+        end
+
         def build_hash
           child_class = @active_record_class
 
           field_to_update = @field_to_update || begin
-            path = child_class.path_from(@parent_class)
+            path = association_path_finder.find_path(from: @parent_class, to: child_class)
             parent_to_child_path = path.map(&:name)
 
             # a has_a b has_a cという関係のとき、cが更新されたらaのフィールドbをupdateする必要がある。
