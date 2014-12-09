@@ -39,6 +39,28 @@ module Elasticsearch
           to_hash[:block]
         end
 
+        # TODO Document what is in the Array
+        # @return [Array]
+        def nested_object_fields
+          @nested_object_fields
+        end
+
+        # @return [Boolean]
+        def has_dependent_fields?
+          @has_dependent_fields
+        end
+
+        # @param [ActiveRecord::Base] record the updated record we are unsure
+        # whether it must be also updated in elasticsearch or not
+        # @return [Boolean] true if we have to update the document for the record indexed in Elasticsearch
+        def index_update_required?(record)
+          previous_changes = record.previous_changes
+
+          defined?(record.index_update_required?) && record.index_update_required? ||
+            (previous_changes.keys & nested_object_fields).size > 0 ||
+            (previous_changes.size > 0 && has_dependent_fields?)
+        end
+
         private
 
         def build_hash
@@ -58,9 +80,8 @@ module Elasticsearch
 
           puts "#{child_class.name} updates #{@parent_class.name}'s #{field_to_update}"
 
-          # TODO 勝手にインスタンスの状態を書き換えていて、相当いまいち。インスタンス外に出す。
-          child_class.instance_variable_set :@nested_object_fields, @parent_class.nested_object_fields_for(parent_to_child_path).map(&:to_s)
-          child_class.instance_variable_set :@has_dependent_fields, @parent_class.has_dependent_fields?(field_to_update) ||
+          @nested_object_fields = @parent_class.nested_object_fields_for(parent_to_child_path).map(&:to_s)
+          @has_dependent_fields = @parent_class.has_dependent_fields?(field_to_update) ||
             (path.first.destination.through_class == child_class && @parent_class.has_association_named?(field_to_update) && @parent_class.has_document_field_named?(field_to_update))
 
           custom_if = @if

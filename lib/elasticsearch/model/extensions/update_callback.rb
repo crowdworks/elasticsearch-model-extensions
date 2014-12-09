@@ -9,9 +9,10 @@ module Elasticsearch
             records_to_update_documents = config.records_to_update_documents
             only_if = config.only_if
             callback = self
+            _config = config
 
             record.instance_eval do
-              return unless only_if.call(self) && index_update_required?
+              return unless only_if.call(self) && _config.index_update_required?(self)
 
               target = records_to_update_documents.call(self)
 

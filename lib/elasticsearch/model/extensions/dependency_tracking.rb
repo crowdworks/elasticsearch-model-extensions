@@ -14,6 +14,7 @@ module Elasticsearch
           end
         end
 
+        # TODO Avoid adding singleton methods to classes
         module ClassMethods
           def tracks_attributes_dependencies(dependencies)
             const_set 'DEPENDENT_CUSTOM_ATTRIBUTES', dependencies.dup.freeze

@@ -10,11 +10,6 @@ module Elasticsearch
           klass.extend ClassMethods
         end
 
-        def index_update_required?
-          (previous_changes.keys & self.class.nested_object_fields).size > 0 ||
-            (previous_changes.size > 0 && self.class.has_dependent_fields?)
-        end
-
         class Update
           def initialize(from:, to:)
             @parent_class = from
@@ -96,14 +91,6 @@ module Elasticsearch
         end
 
         module ClassMethods
-          def nested_object_fields
-            @nested_object_fields
-          end
-
-          def has_dependent_fields?
-            @has_dependent_fields
-          end
-
           def path_from(from)
             Elasticsearch::Model::Extensions::MappingNode.
               from_class(from).
