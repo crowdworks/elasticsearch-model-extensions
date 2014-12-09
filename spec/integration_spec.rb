@@ -1,6 +1,6 @@
 require 'elasticsearch/model/extensions/all'
 
-RSpec.shared_examples 'a normal elasticsearch-model object' do
+RSpec.shared_examples 'a search supporting automatic as_indexed_json creation' do
   describe 'a record creation' do
     before(:each) do
       ::Article.create(title: 'foo', created_at: Time.now)
@@ -42,7 +42,7 @@ RSpec.shared_examples 'a normal elasticsearch-model object' do
   end
 end
 
-RSpec.shared_examples 'an article with comments' do
+RSpec.shared_examples 'a search supporting association' do
   describe 'a record creation' do
     before(:each) do
       ::Article.create(title: 'foo', created_at: Time.now, comments_attributes: [{body: 'new_comment'}])
@@ -89,6 +89,55 @@ RSpec.shared_examples 'an article with comments' do
 
     it 'makes the document unsearchable' do
       expect(Article.search('Test').records.size).to eq(0)
+    end
+  end
+
+  context 'when an article\'s comment updated' do
+    def updating_articles_comment
+      Article.last.tap do |a|
+        a.comments.where(body: 'Comment1').first.tap do |c|
+          c.body = 'Comment2'
+          c.save!
+        end
+      end
+
+      Article.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_articles_found_for_the_old_comment
+      Article.search('Comment1').records.size
+    end
+
+    def number_of_articles_found_for_the_new_comment
+      Article.search('Comment2').records.size
+    end
+
+    it 'makes the article unsearchable with the old comment' do
+      expect { updating_articles_comment }.to change { number_of_articles_found_for_the_old_comment }.by(-1)
+    end
+
+    it 'makes the article searchable with the new comment' do
+      expect { updating_articles_comment }.to change { number_of_articles_found_for_the_new_comment }.by(1)
+    end
+  end
+
+  context 'when an article\'s comment destroyed' do
+    def destroying_articles_comment
+      Article.last.tap do |a|
+        a.comments.where(body: 'Comment1').first.tap do |c|
+          c.destroy
+        end
+      end
+
+      Article.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_articles_found_for_the_comment
+      Article.search('Comment1').records.size
+    end
+
+    it 'makes the article unsearchable with the old comment' do
+      expect { destroying_articles_comment }.to change { number_of_articles_found_for_the_comment }.by(-1)
     end
   end
 end
@@ -317,10 +366,26 @@ RSpec.describe 'integration' do
       end
     end
 
-    it_behaves_like 'a normal elasticsearch-model object'
+    it_behaves_like 'a search supporting automatic as_indexed_json creation'
   end
 
-  context 'with articles_with_comments_and_delayed_jobs' do
+  context 'with articles and comments' do
+    before(:each) do
+      load 'setup/articles_with_comments.rb'
+    end
+
+    after(:each) do
+      ActiveRecord::Schema.define(:version => 2) do
+        drop_table :articles
+        drop_table :comments
+      end
+    end
+
+    it_behaves_like 'a search supporting automatic as_indexed_json creation'
+    it_behaves_like 'a search supporting association'
+  end
+
+  context 'with articles, comments and delayed_jobs' do
     before(:each) do
       load 'setup/articles_with_comments_and_delayed_jobs.rb'
     end
@@ -333,7 +398,8 @@ RSpec.describe 'integration' do
       end
     end
 
-    it_behaves_like 'a normal elasticsearch-model object'
+    it_behaves_like 'a search supporting automatic as_indexed_json creation'
+    it_behaves_like 'a search supporting association'
   end
 
   context 'with authors, books and tags' do
@@ -350,8 +416,6 @@ RSpec.describe 'integration' do
       end
     end
 
-    # it_behaves_like 'a normal elasticsearch-model object'
-    # it_behaves_like 'an article with comments'
     it_behaves_like 'a search supporting polymorphic associations'
   end
 end
