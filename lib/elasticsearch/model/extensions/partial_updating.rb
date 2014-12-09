@@ -123,7 +123,7 @@ module Elasticsearch
               yield changed_field
             end
 
-            each_dependent_attribute_for(changed_fields.map(&:to_s)) do |a|
+            __dependency_tracker__.each_dependent_attribute_for(changed_fields.map(&:to_s)) do |a|
               a_sym = a.intern
 
               yield a_sym

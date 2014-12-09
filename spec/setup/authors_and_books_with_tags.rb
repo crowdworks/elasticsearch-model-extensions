@@ -44,12 +44,14 @@ class Author < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::BatchUpdating
   include Elasticsearch::Model::Extensions::PartialUpdating
 
-  DEPENDENT_CUSTOM_ATTRIBUTES = {
-    %w| books | => %w| num_books |,
-    %w| tags | => %w| num_tags |
-  }
-
   include Elasticsearch::Model::Extensions::DependencyTracking
+
+  tracks_attributes_dependencies (
+                                   {
+                                     %w| books | => %w| num_books |,
+                                     %w| tags | => %w| num_tags |
+                                   }
+                                 )
 
   settings index: {number_of_shards: 1, number_of_replicas: 0} do
     mapping do
@@ -98,11 +100,9 @@ class ::Book < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::PartialUpdating
   include Elasticsearch::Model::Extensions::OuterDocumentUpdating
 
-  DEPENDENT_CUSTOM_ATTRIBUTES = {
-    %w| tags | => %w| num_tags |
-  }
-
   include Elasticsearch::Model::Extensions::DependencyTracking
+
+  tracks_attributes_dependencies %w| tags | => %w| num_tags |
 
   settings index: {number_of_shards: 1, number_of_replicas: 0} do
     mapping do

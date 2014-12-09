@@ -26,11 +26,9 @@ class ::Article < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::BatchUpdating
   include Elasticsearch::Model::Extensions::PartialUpdating
 
-  DEPENDENT_CUSTOM_ATTRIBUTES = {
-    %w| comments | => %w| num_comments |
-  }
-
   include Elasticsearch::Model::Extensions::DependencyTracking
+
+  tracks_attributes_dependencies %w| comments | => %w| num_comments |
 
   settings index: {number_of_shards: 1, number_of_replicas: 0} do
     mapping do
