@@ -87,7 +87,6 @@ end
 
 class ::Book < ActiveRecord::Base
   belongs_to :author
-  has_many :reviews
   has_many :tags, as: :taggable
 
   accepts_nested_attributes_for :tags
@@ -100,7 +99,6 @@ class ::Book < ActiveRecord::Base
   include Elasticsearch::Model::Extensions::OuterDocumentUpdating
 
   DEPENDENT_CUSTOM_ATTRIBUTES = {
-    %w| reviews | => %w| num_reviews |,
     %w| tags | => %w| num_tags |
   }
 
@@ -135,7 +133,6 @@ class ::Tag < ActiveRecord::Base
   default_scope { where(arel_table[:deleted_at].eq(nil)) }
 
   include Elasticsearch::Model
-  include Elasticsearch::Model::Callbacks
   include Elasticsearch::Model::Extensions::IndexOperations
   include Elasticsearch::Model::Extensions::BatchUpdating
   include Elasticsearch::Model::Extensions::PartialUpdating
@@ -174,8 +171,8 @@ Author.create! nickname: 'Mikoto',
 
 Author.create! nickname: 'Kuroko',
                books_attributes: [
-                 {title: 'Testing Coding', tags_attributes: [{body: 'testing'}, {body: 'coding'}]},
-                 {title: 'Coding', tags_attributes: [{body: 'coding'}]}
+                 {title: 'Code & Test', tags_attributes: [{body: 'testing'}, {body: 'coding'}]},
+                 {title: 'Code', tags_attributes: [{body: 'coding'}]}
                ],
                tags_attributes: [
                  {body: 'testing'},
