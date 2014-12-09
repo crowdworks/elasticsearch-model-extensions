@@ -40,4 +40,10 @@ RSpec.configure do |config|
       example.run
     end
   end
+
+  config.before(:each) do |s|
+    md = s.metadata
+    x = md[:example_group]
+    STDERR.puts "==>>> #{x[:file_path]}:#{x[:line_number]} #{md[:description_args]}"
+  end
 end
