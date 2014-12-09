@@ -18,18 +18,19 @@ module Elasticsearch
           if changed_attributes.empty?
             __elasticsearch__.index_document
           else
-            begin
-              partial_document = self.class.__partial_updater__.build_partial_document_for_update(record: self, changed_attributes: changed_attributes)
-            rescue => e
-              if defined? ::Rails
-                ::Rails.logger.error "Error in #partially_update_document: #{e.message}\n#{e.backtrace.join("\n")}"
-              else
-                warn "Error in #partially_update_document: #{e.message}\n#{e.backtrace.join("\n")}"
-              end
-            end
+            partial_updater = self.class.__partial_updater__
 
-            self.class.__partial_updater__.update_document(id: self.id, doc: partial_document)
+            partial_document = partial_updater.build_partial_document_for_update_with_error_logging(
+              record: self,
+              changed_attributes: changed_attributes
+            )
+
+            if partial_document
+              partial_updater.update_document(id: self.id, doc: partial_document)
+            end
           end
+
+          true
         end
 
         module ClassMethods

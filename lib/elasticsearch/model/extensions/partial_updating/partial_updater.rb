@@ -90,6 +90,24 @@ module Elasticsearch
             fields
           end
 
+          def build_partial_document_for_update_with_error_logging(record:, changed_attributes:, json_options: nil)
+            begin
+              build_partial_document_for_update(
+                record: record,
+                changed_attributes: changed_attributes,
+                json_options: json_options
+              )
+            rescue => e
+              if defined? ::Rails
+                ::Rails.logger.error "Error in #build_partial_document_for_update_with_error_logging: #{e.message}\n#{e.backtrace.join("\n")}"
+              else
+                warn "Error in #build_partial_document_for_update_with_error_logging: #{e.message}\n#{e.backtrace.join("\n")}"
+              end
+
+              nil
+            end
+          end
+
           # @param [ActiveRecord::Base] record
           # @param [Array<Symbol>] changed_attributes
           # @param [Proc<Symbol, Hash>] json_options
