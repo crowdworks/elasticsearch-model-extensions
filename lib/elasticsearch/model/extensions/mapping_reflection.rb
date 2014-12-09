@@ -2,14 +2,19 @@ module Elasticsearch
   module Model
     module Extensions
       module MappingReflection
-        def self.included(base)
-          base.extend ClassMethods
-        end
+        class MappingReflector
+          # @param [Class] base A class extending ActiveRecord::Base
+          def initialize(base)
+            @base = base
+          end
 
-        module ClassMethods
+          def base
+            @base
+          end
+
           # @param [Class] destination_class
           def path_in_mapping_to_class(destination_class, current_properties: nil, current_class: nil, visited_classes: nil)
-            current_properties ||= mappings.to_hash[:"#{self.document_type}"][:properties]
+            current_properties ||= default_root_properties
             visited_classes ||= []
             current_class ||= self
 
@@ -42,7 +47,7 @@ module Elasticsearch
           # @param [Symbol] nested_object_name
           # @return [Array<Symbol>]
           def path_in_mapping_to(nested_object_name, root_properties: nil)
-            root_properties ||= mappings.to_hash[:"#{self.document_type}"][:properties]
+            root_properties ||= default_root_properties
 
             keys = root_properties.keys
 
@@ -62,18 +67,13 @@ module Elasticsearch
             []
           end
 
-          def document_field_named(field_name)
-            root_properties ||= mappings.to_hash[:"#{self.document_type}"][:properties]
-            root_properties[field_name]
-          end
-
           def has_document_field_named?(field_name)
             !! document_field_named(field_name)
           end
 
           # @param [Array<Symbol>] path
           def nested_object_fields_for(path, root_properties: nil)
-            root_properties ||= mappings.to_hash[:"#{self.document_type}"][:properties]
+            root_properties ||= default_root_properties
 
             keys = root_properties.keys
 
@@ -88,7 +88,31 @@ module Elasticsearch
               end
             end
           end
+
+          protected
+
+          def default_root_properties
+            base.mappings.to_hash[:"#{base.document_type}"][:properties]
+          end
+
+          def document_field_named(field_name)
+            root_properties ||= default_root_properties
+            root_properties[field_name]
+          end
         end
+
+        def self.included(base)
+          base.extend ClassMethods
+
+          base.instance_variable_set :@__mapping_reflector__, MappingReflector.new(base)
+        end
+
+        module ClassMethods
+          def __mapping_reflector__
+            @__mapping_reflector__
+          end
+        end
+
       end
     end
   end
