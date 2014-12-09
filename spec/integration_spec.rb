@@ -214,8 +214,95 @@ RSpec.shared_examples 'a search supporting polymorphic associations' do
     end
   end
 
+  context 'when an author\'s tag is updated' do
+    def updating_an_authors_tag
+      tag = find_author_by_nickname('Kuroko').tags.where(body: 'coding').first
+      tag.tap do |t|
+        t.body = 'thinking'
+        t.save!
+      end
+
+      Author.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_authors_found_for_the_old_tag
+      Author.search('coding').records.size
+    end
+
+    def number_of_authors_found_for_the_new_tag
+      Author.search('thinking').records.size
+    end
+
+    it 'makes the author unsearchable with the old tag' do
+      expect { updating_an_authors_tag }.to change { number_of_authors_found_for_the_old_tag }.by(-1)
+    end
+
+    it 'makes the author seachable with the new tag' do
+      expect { updating_an_authors_tag }.to change { number_of_authors_found_for_the_new_tag }.by(1)
+    end
+  end
+
+  context 'when an author\'s tag is destroyed' do
+    def destroying_a_tag_for_an_author
+      tag = find_author_by_nickname('Kuroko').tags.where(body: 'coding').first
+      tag.destroy
+
+      Author.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_authors_found_for_the_tag
+      Author.search('coding').records.size
+    end
+
+    it 'makes an author unsearchable' do
+      expect { destroying_a_tag_for_an_author }.to change { number_of_authors_found_for_the_tag }.by(-1)
+    end
+  end
+
+  context 'when an book\'s tag is destroyed' do
+    def destroying_a_books_tag
+      find_book_by_title('Test').tags.where(body: 'testing').first.destroy
+
+      Book.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_books_found_for_the_tag
+      Book.search('testing').records.size
+    end
+
+    it 'makes the book unsearchable' do
+      expect { destroying_a_books_tag }.to change { number_of_books_found_for_the_tag }.by(-1)
+    end
+  end
+
+  context 'when an book\'s tag is updated' do
+    def updating_a_books_tag_with_a_new_body
+      find_book_by_title('Test').tags.where(body: 'testing').first.tap do |t|
+        t.body = 'thinking'
+        t.save!
+      end
+
+      Book.__elasticsearch__.refresh_index!
+    end
+
+    def number_of_books_found_for_the_old_tag
+      Book.search('testing').records.size
+    end
+
+    def number_of_books_found_for_the_new_tag
+      Book.search('thinking').records.size
+    end
+
+    it 'makes the book unsearchable with the old tag' do
+      expect { updating_a_books_tag_with_a_new_body }.to change { number_of_books_found_for_the_old_tag }.by(-1)
+    end
+
+    it 'makes the book searchable with the new tag' do
+      expect { updating_a_books_tag_with_a_new_body }.to change { number_of_books_found_for_the_new_tag }.by(1)
+    end
+  end
+
   # TODO Describe about logical deletion
-  # TODO Describe behaviors when tags are updated
 end
 
 RSpec.describe 'integration' do
