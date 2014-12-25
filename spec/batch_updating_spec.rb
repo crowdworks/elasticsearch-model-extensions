@@ -14,10 +14,6 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
     end
   end
 
-  subject {
-    Article
-  }
-
   describe '.with_indexed_tables_included' do
     subject {
       Article.with_indexed_tables_included
@@ -53,6 +49,10 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
       specify {
         expect { subject }.to raise_error
       }
+
+      specify {
+        expect { Article.__batch_updater__.reconnect! }.to raise_error
+      }
     end
 
     context 'with a `elasticsearch_hosts` implementation' do
@@ -87,19 +87,48 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
       end
     end
 
-    def number_of_articles_about_coding
-      Article.search('Coding').records.size
+    shared_examples 'indexing all articles' do
+      def number_of_articles_about_coding
+        Article.search('Coding').records.size
+      end
+
+      specify {
+        expect { subject; Article.__elasticsearch__.refresh_index! }.to change { number_of_articles_about_coding }.by(2)
+      }
     end
 
     describe '.update_index_in_parallel' do
       subject {
         Article.update_index_in_parallel(parallelism: 2)
-        Article.__elasticsearch__.refresh_index!
       }
 
-      specify {
-        expect { subject }.to change { number_of_articles_about_coding }.by(2)
+      it_behaves_like 'indexing all articles'
+      end
+
+    describe '.update_index_in_batches' do
+      subject {
+        Article.update_index_in_batches
       }
+
+      it_behaves_like 'indexing all articles'
+    end
+
+    describe 'Association/Extension' do
+      describe '.update_index_for_ids_in_range' do
+        subject {
+          Article.for_indexing.update_index_for_ids_in_range(Article.minimum(:id)..Article.maximum(:id))
+        }
+
+        it_behaves_like 'indexing all articles'
+      end
+
+      describe '.update_index_in_batches' do
+        subject {
+          Article.for_indexing.update_index_in_batches
+        }
+
+        it_behaves_like 'indexing all articles'
+      end
     end
   end
 end

@@ -1,4 +1,5 @@
 require_relative 'mapping_reflection'
+require_relative 'batch_updating/batch_updater'
 
 module Elasticsearch
   module Model
@@ -27,29 +28,15 @@ module Elasticsearch
         end
 
         module ClassMethods
-          def split_ids_into(chunk_num, min:nil, max:nil)
-            min ||= minimum(:id)
-            max ||= maximum(:id)
-            chunk_num.times.inject([]) do |r,i|
-              chunk_size = ((max-min+1)/chunk_num.to_f).ceil
-              first = chunk_size * i
-
-              last = if i == chunk_num - 1
-                       max
-                     else
-                       chunk_size * (i + 1) - 1
-                     end
-
-              r << (first..last)
-            end
+          def __batch_updater__
+            @__batch_updater__ ||= ::Elasticsearch::Model::Extensions::BatchUpdating::BatchUpdater.new(self)
           end
 
           def update_index_in_parallel(parallelism:, index: nil, type: nil, min: nil, max: nil, batch_size:DEFAULT_BATCH_SIZE)
             klass = self
 
-            Parallel.each(klass.split_ids_into(parallelism, min: min, max: max), in_processes: parallelism) do |id_range|
-              @rdb_reconnected ||= klass.connection.reconnect! || true
-              @elasticsearch_reconnected ||= klass.__elasticsearch__.client = Elasticsearch::Client.new(host: klass.elasticsearch_hosts)
+            Parallel.each(__batch_updater__.split_ids_into(parallelism, min: min, max: max), in_processes: parallelism) do |id_range|
+              __batch_updater__.reconnect!
               klass.for_indexing.update_index_for_ids_in_range id_range, index: index, type: type, batch_size: batch_size
             end
 
@@ -73,36 +60,6 @@ module Elasticsearch
                                end
 
             records_in_scope.update_index_in_batches(batch_size: batch_size, index: index, type: type)
-          end
-
-          # @param [Array] records
-          def update_index_in_batch(records, index: nil, type: nil, client: nil)
-            klass = self
-
-            client ||= klass.__elasticsearch__.client
-            index ||= klass.index_name
-            type ||= klass.document_type
-
-            if records.size > 1
-              response = client.bulk \
-                             index:   index,
-                             type:    type,
-                             body:    records.map { |r| { index: { _id: r.id, data: r.as_indexed_json } } }
-
-              one_or_more_errors_occurred = response["errors"]
-
-              if one_or_more_errors_occurred
-                if defined? ::Rails
-                  ::Rails.logger.warn "One or more error(s) occurred while updating the index #{records} for the type #{type}\n#{JSON.pretty_generate(response)}"
-                else
-                  warn "One or more error(s) occurred while updating the index #{records} for the type #{type}\n#{JSON.pretty_generate(response)}"
-                end
-              end
-            else
-              records.each do |r|
-                client.index index: index, type: type, id: r.id, body: r.as_indexed_json
-              end
-            end
           end
         end
 
@@ -132,7 +89,7 @@ module Elasticsearch
 
             def update_index_in_batches(batch_size: DEFAULT_BATCH_SIZE, conditions:nil, index: nil, type: nil)
               find_in_batches(batch_size: batch_size, conditions: conditions) do |records|
-                klass.update_index_in_batch(records, index: index, type: type)
+                __batch_updater__.update_index_in_batch(records, index: index, type: type)
               end
             end
           end
