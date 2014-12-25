@@ -70,26 +70,44 @@ module Elasticsearch
           @association_path_finder ||= Elasticsearch::Model::Extensions::AssociationPathFinding::AssociationPathFinder.new
         end
 
+        def provided_parent_to_child_path
+          field_to_update = @field_to_update
+
+          @parent_to_child_path ||=
+              if field_to_update.is_a? Hash
+                extract_path_from_hash(field_to_update)
+              elsif field_to_update.is_a? Symbol
+                [field_to_update]
+              elsif field_to_update.nil?
+                @calculated_path = association_path_finder.find_path(from: @parent_class, to: @active_record_class)
+                @calculated_path.map(&:name)
+              else
+                raise "Unexpected type for field_to_update: #{field_to_update}(#{field_to_update.class})"
+              end
+        end
+
+        def extract_path_from_hash(hash)
+          hash.is_a?(Symbol) ? [hash] : (hash.keys.empty? ? [] : [hash.keys.first] + extract_path_from_hash(hash[hash.keys.first]))
+        end
+
+        def provided_field_to_update
+          # a has_a b has_a cという関係のとき、cが更新されたらaのフィールドbをupdateする必要がある。
+          # そのとき、
+          # 親aから子cへのパスが[:b, :c]だったら、bだけをupdateすればよいので
+          provided_parent_to_child_path.first
+        end
+
         def build_hash
           child_class = @active_record_class
 
-          field_to_update = @field_to_update || begin
-            path = association_path_finder.find_path(from: @parent_class, to: child_class)
-            parent_to_child_path = path.map(&:name)
-
-            # a has_a b has_a cという関係のとき、cが更新されたらaのフィールドbをupdateする必要がある。
-            # そのとき、
-            # 親aから子cへのパスが[:b, :c]だったら、bだけをupdateすればよいので
-            parent_to_child_path.first
-          end
-
-          parent_to_child_path ||= [field_to_update]
+          field_to_update = provided_field_to_update
+          parent_to_child_path = provided_parent_to_child_path
 
           puts "#{child_class.name} updates #{@parent_class.name}'s #{field_to_update}"
 
           @nested_object_fields = @parent_class.__mapping_reflector__.nested_object_fields_for(parent_to_child_path).map(&:to_s)
           @has_dependent_fields = @parent_class.__dependency_tracker__.has_dependent_fields?(field_to_update) ||
-            (path && path.first.destination.through_class == child_class && @parent_class.__dependency_tracker__.has_association_named?(field_to_update) && @parent_class.__mapping_reflector__.has_document_field_named?(field_to_update))
+            (@calculated_path && @calculated_path.first.destination.through_class == child_class && @parent_class.__dependency_tracker__.has_association_named?(field_to_update) && @parent_class.__mapping_reflector__.has_document_field_named?(field_to_update))
 
           custom_if = @if
 
