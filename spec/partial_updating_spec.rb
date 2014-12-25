@@ -22,8 +22,8 @@ RSpec.describe Elasticsearch::Model::Extensions::PartialUpdating do
 
   specify {
     expect(subject.as_indexed_json).to eq(
-                                         :"comments"=>[{"body"=>'Comment1'}],
-                                         :"num_comments"=>1,
+                                         "comments"=>[{"body"=>'Comment1'}],
+                                         "num_comments"=>1,
                                          "title"=>'Coding',
                                          "created_at"=>subject.created_at
                                        )
@@ -35,7 +35,7 @@ RSpec.describe Elasticsearch::Model::Extensions::PartialUpdating do
     }
 
     specify {
-      expect(subject.as_json_options).to include(methods: :num_comments)
+      expect(subject.as_json_options).to include(methods: "num_comments")
     }
 
     specify {

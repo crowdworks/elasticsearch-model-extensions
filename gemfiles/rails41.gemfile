@@ -1,0 +1,11 @@
+eval_gemfile File.expand_path(File.join(File.dirname(__FILE__), '../Gemfile'))
+
+ignored_gems = %w(activerecord)
+
+dependencies.delete_if do |g|
+  ignored_gems.include?(g.name)
+end
+
+group :test, :development do
+  gem 'activerecord', '~> 4.1.4'
+end

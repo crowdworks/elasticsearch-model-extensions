@@ -80,15 +80,15 @@ module Elasticsearch
 
               conditions = record_id.gteq(from).and(record_id.lteq(to))
 
-              update_index_in_batches(batch_size: batch_size, index: index, type: type, conditions: conditions)
+              where(conditions).update_index_in_batches(batch_size: batch_size, index: index, type: type)
             end
 
             def update_index_for_ids_in_range(range, index: nil, type: nil, batch_size: DEFAULT_BATCH_SIZE)
               update_index_for_ids_from(range.first, to: range.last, type: type, index: index, batch_size: batch_size)
             end
 
-            def update_index_in_batches(batch_size: DEFAULT_BATCH_SIZE, conditions:nil, index: nil, type: nil)
-              find_in_batches(batch_size: batch_size, conditions: conditions) do |records|
+            def update_index_in_batches(batch_size: DEFAULT_BATCH_SIZE, index: nil, type: nil)
+              find_in_batches(batch_size: batch_size) do |records|
                 __batch_updater__.update_index_in_batch(records, index: index, type: type)
               end
             end

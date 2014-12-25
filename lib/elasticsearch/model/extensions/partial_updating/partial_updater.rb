@@ -25,6 +25,10 @@ module Elasticsearch
               root: false
             }
 
+            nested_attributes.map!(&:to_s)
+            method_attributes.map!(&:to_s)
+            only_attributes.map!(&:to_s)
+
             if only_attributes.size > 1
               options[:only] = only_attributes
             elsif only_attributes.size == 1
@@ -38,9 +42,10 @@ module Elasticsearch
             end
 
             nested_attributes.each do |n|
-              a = associations.find { |a| a.name == n.intern }
+              n_as_sym = n.intern
+              a = associations.find { |a| a.name == n_as_sym }
               nested_klass = a.class_name.constantize
-              nested_prop = props[n]
+              nested_prop = props[n_as_sym]
               if nested_prop.present?
                 options[:include] ||= {}
                 options[:include][n] = build_as_json_options(
@@ -61,7 +66,7 @@ module Elasticsearch
           end
 
           def partial_as_json_options(field)
-            as_json_options[:include][field]
+            as_json_options[:include][field.to_s]
           end
 
           def each_field_to_update_according_to_changed_fields(changed_fields)

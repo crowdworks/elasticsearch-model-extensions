@@ -25,7 +25,7 @@ ActiveRecord::Schema.define(:version => 1) do
     t.integer :taggable_id
     t.string :body
     t.datetime :created_at, :default => 'NOW()'
-    t.datetime :deleted_at, :default => 'NOW()'
+    t.datetime :deleted_at, :null => true
   end
 end
 

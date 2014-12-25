@@ -34,6 +34,11 @@ With Elasticsearch installed, you can run examples configured with an ES instanc
     (A bunch of log output here)
     irb(main):001:0> Article.search('Comment1')
 
+To run the same example with Rails 4.1.x:
+
+    $ BUNDLE_GEMFILE=gemfiles/rails41.gemfile bundle exec irb -I spec -r example/articles_with_comments
+
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/elasticsearch-model-extensions/fork )
