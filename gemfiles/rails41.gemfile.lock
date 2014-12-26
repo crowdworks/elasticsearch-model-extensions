@@ -1,7 +1,7 @@
 PATH
   remote: /Users/mumoshu/Repositories/elasticsearch-model-extensions
   specs:
-    elasticsearch-model-extensions (0.2.2)
+    elasticsearch-model-extensions (0.3.2)
 
 GEM
   remote: https://rubygems.org/
