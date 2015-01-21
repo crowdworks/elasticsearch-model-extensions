@@ -99,8 +99,12 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
 
     describe '.update_index_in_parallel' do
       subject {
-        Article.update_index_in_parallel(parallelism: 2)
+        Article.update_index_in_parallel(parallelism: 1)
       }
+
+      before(:each) do
+        expect(Parallel).to receive(:each).with([0..3], in_processes: 1).and_yield(1..3).once
+      end
 
       it_behaves_like 'indexing all articles'
       end
