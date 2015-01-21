@@ -33,7 +33,12 @@ module Elasticsearch
             begin
               find_record_or_raise
             rescue ActiveRecord::RecordNotFound => e
-              Rails.logger.info "#{self.class.name}: #{e.to_s}"
+              message = "#{self.class.name}: #{e.to_s}"
+              if defined? ::Rails.logger.info
+                ::Rails.logger.info message
+              else
+                warn message
+              end
               nil
             end
           end
