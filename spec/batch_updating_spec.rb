@@ -40,34 +40,12 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
     end
   end
 
-  describe '.elasticsearch_hosts' do
+  describe '#reconnect!' do
     subject {
-      Article.elasticsearch_hosts
+      -> { Article.__batch_updater__.reconnect! }
     }
 
-    context 'without a `elasticsearch_hosts` implementation' do
-      specify {
-        expect { subject }.to raise_error
-      }
-
-      specify {
-        expect { Article.__batch_updater__.reconnect! }.to raise_error
-      }
-    end
-
-    context 'with a `elasticsearch_hosts` implementation' do
-      before(:each) do
-        Article.class_eval do
-          def self.elasticsearch_hosts
-            'http://localhost:9250'
-          end
-        end
-      end
-
-      specify {
-        expect { subject }.to_not raise_error
-      }
-    end
+    it { is_expected.not_to raise_error }
   end
 
   context 'the index dropped' do
@@ -76,11 +54,6 @@ RSpec.describe Elasticsearch::Model::Extensions::BatchUpdating do
       Article.__elasticsearch__.refresh_index!
 
       Article.class_eval do
-        def self.elasticsearch_hosts
-          listened_port = (ENV['TEST_CLUSTER_PORT'] || 9250)
-          "http://localhost:#{listened_port}/"
-        end
-
         def self.with_indexed_tables_included
           includes(:comments)
         end

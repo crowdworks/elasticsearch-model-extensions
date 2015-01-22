@@ -13,7 +13,8 @@ module Elasticsearch
 
           def reconnect!
             klass.connection.reconnect!
-            klass.__elasticsearch__.client = Elasticsearch::Client.new(host: klass.elasticsearch_hosts)
+            # This is required to prevent requests from timing out when they are made in multiple processes(in other words, the process is forked).
+            klass.__elasticsearch__.client.transport.reload_connections!
           end
 
           # @param [Array] records
